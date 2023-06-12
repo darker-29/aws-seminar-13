@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS Seminar 13 Template
+
+Parameters:
+  VpcCidr:
+    Type: String
+
+  Environment:
+    Type: String
+
+  MyIPCidr:
+    Type: String
+
+  EC2SSHKey:
+    Type: String
+
+
+
+
+Resources:
+
+####################################################################
+# EC2 (SecurityGroup, EC2Instance)
+####################################################################
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-ec2-sg
+      GroupDescription: !Sub Security Group for ${Environment} EC2
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${Environment}-VpcId
+      SecurityGroupIngress:
+        - CidrIp: !Ref VpcCidr
+          Description: Allow Access to 80 port from VpcCidr
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+        - CidrIp: !Ref MyIPCidr
+          Description: Allow Access to 22 port from restricted own Ip
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-ec2-sg
+
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: !Select [ 0 , "Fn::GetAZs": !Ref AWS::Region  ]
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 8
+            VolumeType: gp2
+            DeleteOnTermination: false
+      ImageId: ami-0bc23e4337e8bc5ea
+      InstanceType: t3.nano
+      KeyName: !Ref EC2SSHKey
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          SubnetId:
+            Fn::ImportValue:
+              !Sub ${Environment}-PublicSubnet1a
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-ec2
+      UserData: !Base64 |
+        #!/bin/bash
+
+        yum -y update
+        yum -y install httpd
+        systemctl start httpd
+
+
+Outputs:
+  EC2:
+    Value: !Ref EC2Instance
+    Export:
+      Name: !Sub ${Environment}-EC2
+

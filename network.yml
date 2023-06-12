@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS Seminar 13 Template
+
+Parameters:
+  VpcCidr:
+    Type: String
+
+  Environment:
+    Type: String
+
+  MyIPCidr:
+    Type: String
+
+  EC2SSHKey:
+    Type: String
+
+
+
+
+Resources:
+
+
+####################################################################
+# Network (VPC, InternetGateway, Subnet, RouteTable, Route)
+####################################################################
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-vpc
+
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-igw
+
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+
+  PublicSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, "Fn::GetAZs": !Ref AWS::Region ]
+      CidrBlock: !Select [ 0, !Cidr [ !Ref VpcCidr, 1, 8 ] ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-publicsubnet-1a
+
+
+  PublicRouteTable1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-rt-1a
+
+
+  PublicRoute1a:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1a
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+
+  SubnetRouteTable1aAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1a
+      SubnetId: !Ref PublicSubnet1a
+
+
+  PublicSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, "Fn::GetAZs": !Ref AWS::Region ]
+      CidrBlock: !Select [ 1, !Cidr [ !Ref VpcCidr, 2, 8 ] ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-publicsubnet-1c
+
+
+  PublicRouteTable1c:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-rt-1c
+
+
+  PublicRoute1c:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1c
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+
+
+  SubnetRouteTable1cAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1c
+      SubnetId: !Ref PublicSubnet1c
+
+
+OutPuts:
+  VPC:
+    Value: !Ref VPC
+    Name:
+      Export: !Sub ${Environment}-VpcId
+
+  PublicSubnet1a:
+    Value: !Ref PublicSubnet1a
+    Name:
+      Export: !Sub ${Environment}-PublicSubnet1a
+
+
+  PublicSubnet1c:
+    Value: !Ref PublicSubnet1c
+    Name:
+      Export: !Sub ${Environment}-PublicSubnet1c
+

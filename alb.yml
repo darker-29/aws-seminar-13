@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS Seminar 13 Template
+
+Parameters:
+  Environment:
+    Type: String
+
+
+
+
+
+
+Resources:
+####################################################################
+# LoadBalancer
+####################################################################
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-alb-sg
+      GroupDescription: !Sub Security Group for ${Environment} ALB
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${Environment}-VpcId
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow Access to 80 port from Anywhere
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-alb-sg
+
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${Environment}-alb-tg
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${Environment}-VpcId
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 30
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: 200
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      Targets:
+        - Id:
+            Fn::ImportValue:
+              !Sub ${Environment}-EC2
+
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-alb-tg
+
+
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${Environment}-alb
+      Type: application
+      IpAddressType: ipv4
+      Scheme: internet-facing
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+      Subnets:
+        - Fn::ImportValue:
+            !Sub ${Environment}-PublicSubnet1a
+        - Fn::ImportValue:
+            !Sub ${Environment}-PublicSubnet1c
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-alb
+
+
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+
+
+
