@@ -122,8 +122,8 @@ Resources:
 OutPuts:
   VPC:
     Value: !Ref VPC
-    Name:
-      Export: !Sub ${Environment}-VpcId
+    Export:
+      Name: !Sub ${Environment}-VpcId
 
   PublicSubnet1a:
     Value: !Ref PublicSubnet1a
