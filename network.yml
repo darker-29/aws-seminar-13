@@ -127,12 +127,12 @@ OutPuts:
 
   PublicSubnet1a:
     Value: !Ref PublicSubnet1a
-    Name:
-      Export: !Sub ${Environment}-PublicSubnet1a
+    Export:
+      Name: !Sub ${Environment}-PublicSubnet1a
 
 
   PublicSubnet1c:
     Value: !Ref PublicSubnet1c
-    Name:
-      Export: !Sub ${Environment}-PublicSubnet1c
+    Export:
+      Name: !Sub ${Environment}-PublicSubnet1c
 
