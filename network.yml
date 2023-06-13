@@ -8,12 +8,6 @@ Parameters:
   Environment:
     Type: String
 
-  MyIPCidr:
-    Type: String
-
-  EC2SSHKey:
-    Type: String
-
 
 
 
@@ -119,7 +113,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1c
 
 
-OutPuts:
+Outputs:
   VPC:
     Value: !Ref VPC
     Export:
